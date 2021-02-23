@@ -1,10 +1,21 @@
 pragma solidity 0.6.12;
 
+/*
+ * GreedySwapFinance
+ * App:                 will be updated
+ * Medium:              .
+ * Twitter:             .
+ * Telegram:            .
+ * Announcments:        .
+ * GitHub:              .
+ */
+ 
+ 
 import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
 
-import './MasterChef.sol';
+import './Greediest.sol';
 
 contract LotteryRewardPool is Ownable {
     using SafeBEP20 for IBEP20;
@@ -16,7 +27,7 @@ contract LotteryRewardPool is Ownable {
     IBEP20 public cake;
 
     constructor(
-        MasterChef _chef,
+        Greediest _chef,
         IBEP20 _cake,
         address _admin,
         address _receiver
@@ -32,7 +43,7 @@ contract LotteryRewardPool is Ownable {
     event EmergencyWithdraw(address indexed user, uint256 amount);
 
     modifier onlyAdmin() {
-        require(msg.sender == adminAddress, "admin: wut?");
+        require(msg.sender == adminAddress, "admin: nani?");
         _;
     }
 
