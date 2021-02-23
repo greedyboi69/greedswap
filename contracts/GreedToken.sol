@@ -2,6 +2,17 @@
 
 pragma solidity 0.6.12;
 
+/*
+ * GreedySwapFinance
+ * App:                 will be updated
+ * Medium:              .
+ * Twitter:             .
+ * Telegram:            .
+ * Announcments:        .
+ * GitHub:              .
+ */
+ 
+ 
 import "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20.sol";
 
 // Greedtoken with Governance.
