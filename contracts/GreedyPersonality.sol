@@ -5,23 +5,10 @@ import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
 
-import "./CakeToken.sol";
-import "./SyrupBar.sol";
+import "./GreedToken.sol";
+import "./GreedyBar.sol";
 
 // import "@nomiclabs/buidler/console.sol";
-
-interface IMigratorChef {
-    // Perform LP token migration from legacy PancakeSwap to CakeSwap.
-    // Take the current LP token address and return the new LP token address.
-    // Migrator should have full access to the caller's LP token.
-    // Return the new LP token address.
-    //
-    // XXX Migrator must have allowance access to PancakeSwap LP tokens.
-    // CakeSwap must mint EXACTLY the same amount of CakeSwap LP tokens or
-    // else something bad will happen. Traditional PancakeSwap does not
-    // do that so be careful!
-    function migrate(IBEP20 token) external returns (IBEP20);
-}
 
 // MasterChef is the master of Cake. He can make Cake and he is a fair guy.
 //
@@ -29,8 +16,11 @@ interface IMigratorChef {
 // will be transferred to a governance smart contract once CAKE is sufficiently
 // distributed and the community can show to govern itself.
 //
-// Have fun reading it. Hopefully it's bug-free. God bless.
-contract MasterChef is Ownable {
+// Have fun reading it. Hopefully it's bug-free. God bless. <<< YES, that right...
+// 
+// **Well all of this is forked from Pancakeswap... so don't ask me about this please, thanks.**
+
+contract Greediest is Ownable {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
@@ -59,18 +49,17 @@ contract MasterChef is Ownable {
         uint256 accCakePerShare; // Accumulated CAKEs per share, times 1e12. See below.
     }
 
-    // The CAKE TOKEN!
-    CakeToken public cake;
+    // The GREED TOKEN!
+    GreedToken public cake;
     // The SYRUP TOKEN!
-    SyrupBar public syrup;
+    GreedyBar public syrup;
     // Dev address.
     address public devaddr;
-    // CAKE tokens created per block.
+    // GREED tokens created per block.
     uint256 public cakePerBlock;
     // Bonus muliplier for early cake makers.
-    uint256 public BONUS_MULTIPLIER = 1;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigratorChef public migrator;
+    uint256 public BONUS_MULTIPLIER;
+    
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -86,21 +75,22 @@ contract MasterChef is Ownable {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
-        CakeToken _cake,
-        SyrupBar _syrup,
+        GreedToken _greed,
+        GreedyBar _greedyBar,
         address _devaddr,
-        uint256 _cakePerBlock,
+        uint256 _greedPerBlock,
         uint256 _startBlock
     ) public {
-        cake = _cake;
-        syrup = _syrup;
+        cake = _greed;
+        syrup = _greedy;
         devaddr = _devaddr;
-        cakePerBlock = _cakePerBlock;
+        cakePerBlock = _greedPerBlock;
         startBlock = _startBlock;
+        BONUS_MULTIPLIER = _multiplier;
 
         // staking pool
         poolInfo.push(PoolInfo({
-            lpToken: _cake,
+            lpToken: _greed,
             allocPoint: 1000,
             lastRewardBlock: startBlock,
             accCakePerShare: 0
@@ -109,6 +99,11 @@ contract MasterChef is Ownable {
         totalAllocPoint = 1000;
 
     }
+    
+    modifier validatePoool(uint256 _pid) {
+        require(_pid < poolInfo.length, "validatePool: pool exist?");
+        _;
+    }
 
     function updateMultiplier(uint256 multiplierNumber) public onlyOwner {
         BONUS_MULTIPLIER = multiplierNumber;
@@ -116,6 +111,14 @@ contract MasterChef is Ownable {
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
+    }
+    
+    // Detects whether the given pool already exists
+    function checkPoolDuplicate(IBEP20 _lpToken) public view {
+        uint256 length = poolInfo.length;
+        for (uint256 _pid = 0; _pid < length; _pid++) {
+            require(poolInfo[_pid].lpToken != _lpToken, "add: existing pool");
+        }
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
@@ -135,7 +138,7 @@ contract MasterChef is Ownable {
         updateStakingPool();
     }
 
-    // Update the given pool's CAKE allocation point. Can only be called by the owner.
+    // Update the given pool's GREED allocation point. Can only be called by the owner.
     function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
@@ -160,24 +163,7 @@ contract MasterChef is Ownable {
             poolInfo[0].allocPoint = points;
         }
     }
-
-    // Set the migrator contract. Can only be called by the owner.
-    function setMigrator(IMigratorChef _migrator) public onlyOwner {
-        migrator = _migrator;
-    }
-
-    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
-    function migrate(uint256 _pid) public {
-        require(address(migrator) != address(0), "migrate: no migrator");
-        PoolInfo storage pool = poolInfo[_pid];
-        IBEP20 lpToken = pool.lpToken;
-        uint256 bal = lpToken.balanceOf(address(this));
-        lpToken.safeApprove(address(migrator), bal);
-        IBEP20 newLpToken = migrator.migrate(lpToken);
-        require(bal == newLpToken.balanceOf(address(this)), "migrate: bad");
-        pool.lpToken = newLpToken;
-    }
-
+    
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
         return _to.sub(_from).mul(BONUS_MULTIPLIER);
@@ -225,10 +211,10 @@ contract MasterChef is Ownable {
         pool.lastRewardBlock = block.number;
     }
 
-    // Deposit LP tokens to MasterChef for CAKE allocation.
+    // Deposit LP tokens to Greediest for GREED allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
 
-        require (_pid != 0, 'deposit CAKE by staking');
+        require (_pid != 0, 'deposit GREED by staking');
 
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -247,10 +233,10 @@ contract MasterChef is Ownable {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    // Withdraw LP tokens from MasterChef.
+    // Withdraw LP tokens from Greediest.
     function withdraw(uint256 _pid, uint256 _amount) public {
 
-        require (_pid != 0, 'withdraw CAKE by unstaking');
+        require (_pid != 0, 'withdraw GREED by unstaking');
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -268,7 +254,7 @@ contract MasterChef is Ownable {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    // Stake CAKE tokens to MasterChef
+    // Stake GREED tokens to Greediest
     function enterStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];
@@ -289,7 +275,7 @@ contract MasterChef is Ownable {
         emit Deposit(msg.sender, 0, _amount);
     }
 
-    // Withdraw CAKE tokens from STAKING.
+    // Withdraw GREED tokens from STAKING.
     function leaveStaking(uint256 _amount) public {
         PoolInfo storage pool = poolInfo[0];
         UserInfo storage user = userInfo[0][msg.sender];
@@ -319,7 +305,7 @@ contract MasterChef is Ownable {
         user.rewardDebt = 0;
     }
 
-    // Safe cake transfer function, just in case if rounding error causes pool to not have enough CAKEs.
+    // Safe greed transfer function, just in case if rounding error causes pool to not have enough GREEDs.
     function safeCakeTransfer(address _to, uint256 _amount) internal {
         syrup.safeCakeTransfer(_to, _amount);
     }
