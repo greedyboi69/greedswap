@@ -114,9 +114,9 @@ contract Greedtoken is BEP20('Greedy Token', 'Greed') {
         );
 
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "CAKE::delegateBySig: invalid signature");
-        require(nonce == nonces[signatory]++, "CAKE::delegateBySig: invalid nonce");
-        require(now <= expiry, "CAKE::delegateBySig: signature expired");
+        require(signatory != address(0), "GREED::delegateBySig: invalid signature");
+        require(nonce == nonces[signatory]++, "GREED::delegateBySig: invalid nonce");
+        require(now <= expiry, "GREED::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 
