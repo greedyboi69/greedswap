@@ -7,9 +7,9 @@
 Dunno how to write about this, just like other token like pancake or banana. So just farming and get rewards, removed migrator code and add 24 hours timelock. It will be fine.
 This is forked from https://pancakeswap.finance.
 
-Website: https:// will be updated, lmao.
-Medium: wut?
-Telegram: also will be updated
+Website: https:// will be updated, lmao.                                                                 
+Medium: wut?                                                                                            
+Telegram: also will be updated                                                                           
 Announcement: lmao
 
 
